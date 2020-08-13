@@ -1,0 +1,10 @@
+# TRASH
+.idea
+__pycache__
+
+# DATA BASES
+db.db
+
+# TEMP
+.pyc
+
