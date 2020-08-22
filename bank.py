@@ -1,8 +1,7 @@
 import sqlite3
-from datetime import datetime
 
-from config import plus_category, minus_category
-from scripts.tmp import *
+from config import minus_category
+from scripts import *
 
 
 class Banker:
@@ -17,7 +16,9 @@ class Banker:
 
     def addUser(self, user_id):
         with self.connection:
-            return self.cursor.execute("INSERT INTO 'users' ('id', 'user_id', 'condition', 'account') VALUES (?, ?, ?, ?)", (self.user_counter, user_id, True, 0)).fetchall()
+            return self.cursor.execute(
+                "INSERT INTO 'users' ('id', 'user_id', 'condition', 'account') VALUES (?, ?, ?, ?)",
+                (self.user_counter, user_id, True, 0)).fetchall()
 
     def userIdList(self, condition=2):
         # 2 is all users
@@ -27,29 +28,48 @@ class Banker:
             return [x[0] for x in self.cursor.execute("SELECT user_id, condition FROM 'users'").fetchall() if not x[1]]
         elif condition == 1:
             return [x[0] for x in self.cursor.execute("SELECT user_id, condition FROM 'users'").fetchall() if x[1]]
-        return [x[0] for x in self.cursor.execute("SELECT user_id FROM 'users'").fetchall()]
+        return [int(x[0]) for x in self.cursor.execute("SELECT user_id FROM 'users'").fetchall()]
 
     def isActive(self, user_id):
         with self.connection:
-            return self.cursor.execute("SELECT * FROM 'users' WHERE user_id = ?", (user_id, )).fetchall()[0][0]
+            return self.cursor.execute("SELECT * FROM 'users' WHERE user_id = ?", (user_id,)).fetchall()[0][0]
 
     def setStatus(self, user_id, condition: bool):
         with self.connection:
             self.connection.execute("UPDATE 'users' SET condition = ? WHERE user_id = ?", (int(condition), user_id))
 
 
+
     # !!! METHODS FOR TRANSFERS INFORMATION !!!
 
-    def addTransfer(self, user_id: int, value: int, date, category: str):
+    def addTransfer(self, user_id: int, value: float, date=datetime.now().replace(microsecond=0), category='неВыбрано'):
         with self.connection:
-            return self.connection.execute("INSERT INTO 'transfers' ('id', 'user_id', 'value', 'transfer_date', 'category') VALUES(?, ?, ?, ?, ?)", (self.transfer_counter, user_id, value, date, category))
+            return self.connection.execute(
+                "INSERT INTO 'transfers' ('id', 'user_id', 'value', 'transfer_date', 'category') VALUES(?, ?, ?, ?, ?)",
+                (self.transfer_counter, user_id, value, date, category))
+
+    def updateTransfer(self, its_id: int, user_id: int, value: float, category: str, date=datetime.now().replace(microsecond=0)):
+        with self.connection:
+            self.connection.execute("UPDATE 'transfers' SET user_id = ?, value = ?, transfer_date = ?, category = ? WHERE id = ?", (user_id, value, date, category, its_id))
+
+    def getLastTransfer(self, user_id: int):
+        with self.connection:
+            a = self.connection.execute(
+                "SELECT * FROM 'transfers' WHERE user_id = ? ORDER BY transfer_date DESC",
+                (user_id, )).fetchall()
+            if len(a) != 0:
+                return a[0]
+            else:
+                return None
 
     def monthlyReport(self, user_id):
         # return all transfers per month
         with self.connection:
             start = datetime.now().replace(day=1, microsecond=0)
             stop = datetime.now().replace(microsecond=0)
-            return self.connection.execute("SELECT * FROM 'transfers' WHERE user_id = ? AND transfer_date >= ? AND transfer_date <= ?", (user_id, str(start), str(stop))).fetchall()
+            return self.connection.execute(
+                "SELECT * FROM 'transfers' WHERE user_id = ? AND transfer_date >= ? AND transfer_date <= ?",
+                (user_id, str(start), str(stop))).fetchall()
 
     def topCategory(self, user_id):
         # return the most popular category of user per month
@@ -62,7 +82,6 @@ class Banker:
                 a[0][minus_category.index('Другое')] += transfers[i][2]
         return QSDouble(a)
 
-'''
+
 db = Banker('db.db')
-print(db.userIdList())
-'''
+print(db.getLastTransfer(336619540))

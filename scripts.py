@@ -39,3 +39,10 @@ def QSDouble(a: list):
                       [a[1][i] for i in range(1, length) if a[0][i] > a[0][0]]])
 
     return [left[0] + [a[0][0]] + right[0], left[1] + [a[1][0]] + right[1]]
+
+def isDigit(s: str):
+    try:
+        float(s)
+        return True and s[0].isdigit()
+    except ValueError as err:
+        return False
