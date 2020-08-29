@@ -47,16 +47,21 @@ async def stopChatting(message: types.Message):
 # !!! TRANSFERS !!!
 @dp.message_handler()
 async def writeTransfer(message: types.Message):
+    """
+    print(db.getLastTransfer(message.from_user.id)[4] == 'неВыбрано', str(message.text) in my_keyboards.category_buttons)
+    print(db.getLastTransfer(message.from_user.id)[4], str(message.text))
+    print()
+    """
     if int(message.from_user.id) not in db.userIdList(1):
         await message.answer('Я тебя пока не знаю. Напиши /start, чтобы начать.')
 
     # Note about value of transfer
     elif isDigit(str(message.text)):
-        db.addTransfer(message.from_user.id, float(message.text))
+        db.addTransfer(message.from_user.id, float(message.text), datetime.now())
         await message.answer('Выберите категорию:', reply_markup=my_keyboards.category_keyboard)
 
     # Message about a transfer category
-    elif db.getLastTransfer(message.from_user.id)[4] == 'неВыбрано' and (str(message.text) in my_keyboards.category_buttons or str(message.text) in my_keyboards.category_buttons):
+    elif db.getLastTransfer(message.from_user.id)[4] == 'неВыбрано' and str(message.text) in my_keyboards.category_buttons:
         category = str(message.text)
         transfer = db.getLastTransfer(message.from_user.id)
         db.updateTransfer(transfer[0], transfer[1], transfer[2], category, transfer[3])
