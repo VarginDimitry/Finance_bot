@@ -43,15 +43,27 @@ async def stopChatting(message: types.Message):
     await message.answer('Вы перестали следить за своими расходами😖\nТеперь даже на проезд не хватит...')
     db.setStatus(message.from_user.id, False)
 
+@dp.message_handler(commands=['report'])
+async def monthReport(message: types.Message):
+    user = db.getUserById(message.from_user.id)
+    transfers = db.monthlyReport(message.from_user.id)
+    spent_money = sum(x[2] for x in transfers if x[2] < 0)
+
+    top_category = db.topCategory(message.from_user.id)
+    category_list = ''
+    for i in range(len(top_category)):
+        if top_category[0][i] < 0:
+            category_list += f'{i+1}) {top_category[1][i]} - {abs(top_category[0][i])}\n'
+    answer = f'✅ Ваш отчет за месяц ✅\n\n' \
+             f'💳 Денег на счету:\t{user[3]}\n' \
+             f'💸 Потрачено денег за {months[datetime.now().month - 1]}:{abs(spent_money)}\n' \
+             f'📊 Категории:\n{category_list}'
+    await message.answer(answer)
+
 
 # !!! TRANSFERS !!!
 @dp.message_handler()
 async def writeTransfer(message: types.Message):
-    """
-    print(db.getLastTransfer(message.from_user.id)[4] == 'неВыбрано', str(message.text) in my_keyboards.category_buttons)
-    print(db.getLastTransfer(message.from_user.id)[4], str(message.text))
-    print()
-    """
     if int(message.from_user.id) not in db.userIdList(1):
         await message.answer('Я тебя пока не знаю. Напиши /start, чтобы начать.')
 
@@ -69,6 +81,7 @@ async def writeTransfer(message: types.Message):
 
     # Wrong message
     else:
+        db.deleteEmptyTransfers(message.from_user.id)
         await message.answer('Я не понял тебя или ты сделал что-то не по инструкции😖\n'
                              'Я всего лишь робот 🤖\nПожалуйста, следуй следующим пунктам:\n' + instruction)
 
